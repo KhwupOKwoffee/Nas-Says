@@ -20,7 +20,8 @@ class MainWindow(tk.Tk):
     def __init__(self):
 
         self.score = 0
-        self.themeables = []
+        self.labels = []
+        self.buttons = []
 
         # Basic window properties
         super().__init__()
@@ -34,11 +35,10 @@ class MainWindow(tk.Tk):
         # Settings button and menu (inc. radiobuttons)
         self.settings_button = tk.Menubutton(self, text="⚙️")
         self.settings_button.pack(anchor=tk.NE)
-        self.themeables.append(self.settings_button)
+        self.buttons.append(self.settings_button)
 
         self.time_limit = tk.IntVar()
         self.settings_menu = tk.Menu(self.settings_button, tearoff=0)
-        self.settings_menu.add_cascade(label="TIME LIMIT")
         self.settings_menu.add_radiobutton(
                                             label="3 seconds",
                                             variable=self.time_limit,
@@ -54,10 +54,9 @@ class MainWindow(tk.Tk):
                                         command=lambda:self.set_data(1, self.time_limit.get())
                                     )
         self.settings_menu.add_separator()
-        self.settings_menu.add_cascade(label="THEMES")
         self.settings_menu.add_command(
                                     label="Load theme...",
-                                    command=self.load_theme
+                                    command=lambda:self.load_theme("")
                                 )
         self.settings_menu.add_command(
                                     label="Reset theme",
@@ -66,24 +65,24 @@ class MainWindow(tk.Tk):
         self.settings_button["menu"] = self.settings_menu
 
         self.get_data()
-        self.time_limit.set(self.line_vals[1])
+        self.time_limit.set(int(self.line_vals[1]))
 
         # Basic labels
         self.command = tk.Label(self)
         self.command.place(relx=0.5, rely=0.05, anchor=tk.N)
-        self.themeables.append(self.command)
+        self.labels.append(self.command)
 
         self.time_label = tk.Label(self)
         self.time_label.place(relx=0.5, rely=0.1, anchor=tk.N)
-        self.themeables.append(self.time_label)
+        self.labels.append(self.time_label)
 
         self.scoreboard = tk.Label(self)
         self.scoreboard.place(relx=0.5, rely=0.15, anchor=tk.N)
-        self.themeables.append(self.scoreboard)
+        self.labels.append(self.scoreboard)
 
         self.high_scoreboard = tk.Label(self)
         self.high_scoreboard.place(relx=0.5, rely=0.2, anchor=tk.N)
-        self.themeables.append(self.high_scoreboard)
+        self.labels.append(self.high_scoreboard)
 
         self.rules = tk.Label(self)
         self.rules["text"] = "\n".join((
@@ -95,7 +94,7 @@ class MainWindow(tk.Tk):
                                         "Good luck!"
                                     ))
         self.rules.place(relx=0.5, rely=0.3, anchor=tk.N)
-        self.themeables.append(self.rules)
+        self.labels.append(self.rules)
 
         # Frames for stacking buttons (ordered bottom-top)
         self.state_frame = tk.Frame(self)
@@ -115,7 +114,7 @@ class MainWindow(tk.Tk):
                                     height=2,
                                     command=self.end
                                 )
-        self.themeables.append(self.end_button)
+        self.buttons.append(self.end_button)
         
         self.start_button = tk.Button(
                                     self.state_frame,
@@ -124,7 +123,7 @@ class MainWindow(tk.Tk):
                                     height=2,
                                     command=self.start
                                 )
-        self.themeables.append(self.start_button)
+        self.buttons.append(self.start_button)
 
         # Answer buttons using template class, using lambdas to pass args to command
         self.tl_button = self.AnswerButton(self.ans_tframe, command=lambda:self.answered(0))
@@ -132,7 +131,10 @@ class MainWindow(tk.Tk):
         self.bl_button = self.AnswerButton(self.ans_bframe, command=lambda:self.answered(2))
         self.br_button = self.AnswerButton(self.ans_bframe, command=lambda:self.answered(3))
 
-        self.reset_theme()
+        if self.line_vals[2]:
+            self.load_theme(self.line_vals[2])
+        else:
+            self.reset_theme()
 
         self.reset()
 
@@ -142,7 +144,7 @@ class MainWindow(tk.Tk):
         with open("data.txt", "r") as file:
             lines = [line.rstrip("\n") for line in file.readlines()]
             self.line_labels = [line.split("=")[0] for line in lines]
-            self.line_vals = [int(line.split("=")[1]) for line in lines]
+            self.line_vals = [line.split("=")[1] for line in lines]
 
     # Sets the value of one line of the data file
     def set_data(self, n, val):
@@ -166,41 +168,51 @@ class MainWindow(tk.Tk):
         self.ans_bframe["bg"] = self.window
         self.ans_tframe["bg"] = self.window
 
-        for themeable in self.themeables:
-            themeable["bg"] = self.button
-            themeable["fg"] = self.text   
-            themeable["activebackground"] = self.highlight
+        for label in self.labels:
+            label["bg"] = self.window
+            label["fg"] = self.text   
+        
+        for button in self.buttons:
+            button["bg"] = self.button
+            button["fg"] = self.text
+            button["activebackground"] = self.active_button
+            button["activeforeground"] = self.active_text
 
         for button in [self.tl_button, self.tr_button, self.bl_button, self.br_button]:
-            button["activebackground"] = self.highlight
+            button["activebackground"] = self.active_button
 
     def reset_theme(self):
 
         self.window = "white",
         self.button = "white",
         self.text = "black",
-        self.highlight = "white"
+        self.active_button = "white"
         self.colour1 = ["green", "GREEN"]
         self.colour2 = ["red", "RED"]
         self.colour3 = ["magenta", "MAGENTA"]
         self.colour4 = ["blue", "BLUE"]
         
         self.set_theme()
+        self.set_data(2, "")
 
-    def load_theme(self):
+    def load_theme(self, filepath=""):
         
-        filepath = filedialog.askopenfilename()
+        if not filepath:
+            filepath = filedialog.askopenfilename()
         with open(filepath, "r") as file:
             lines = [line.rstrip("\n") for line in file.readlines()]
             lines = [line.split("=")[1] for line in lines]
             self.window = lines[0]
             self.button = lines[1]
             self.text = lines[2]
-            self.highlight = lines[3]
-            self.colour1 = [lines[4].split(",")[0], lines[4].split(",")[1]]
-            self.colour2 = [lines[5].split(",")[0], lines[5].split(",")[1]]
-            self.colour3 = [lines[6].split(",")[0], lines[6].split(",")[1]]
+            self.active_button = lines[3]
+            self.active_text = lines[4]
+            self.colour1 = [lines[5].split(",")[0], lines[5].split(",")[1]]
+            self.colour2 = [lines[6].split(",")[0], lines[6].split(",")[1]]
+            self.colour3 = [lines[7].split(",")[0], lines[7].split(",")[1]]
+            self.colour4 = [lines[8].split(",")[0], lines[8].split(",")[1]]
         self.set_theme()
+        self.set_data(2, filepath)
 
     # Displays home screen
     def reset(self):
@@ -215,7 +227,7 @@ class MainWindow(tk.Tk):
 
         # Getting and setting high score
         self.get_data()
-        high_score = max(self.line_vals[0], self.score)
+        high_score = max(int(self.line_vals[0]), self.score)
         self.set_data(0, high_score)
         self.high_scoreboard["text"] = f"High Score: {high_score}"
 
