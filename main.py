@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import random, threading
 
 
@@ -32,7 +32,7 @@ class MainWindow(tk.Tk):
         icon = tk.PhotoImage(file="nas_says.png")
         self.iconphoto(False, icon)
 
-        # Settings button and menu (inc. radiobuttons)
+        # Settings button and menu
         self.settings_button = tk.Menubutton(self, text="⚙️")
         self.settings_button.pack(anchor=tk.NE)
         self.buttons.append(self.settings_button)
@@ -62,6 +62,11 @@ class MainWindow(tk.Tk):
                                     label="Reset theme",
                                     command=self.reset_theme
                                     )
+        self.settings_menu.add_separator()
+        self.settings_menu.add_command(
+                                        label="How to play",
+                                        command=self.how_to_play
+                                     )
         self.settings_button["menu"] = self.settings_menu
 
         self.get_data()
@@ -83,18 +88,6 @@ class MainWindow(tk.Tk):
         self.high_scoreboard = tk.Label(self)
         self.high_scoreboard.place(relx=0.5, rely=0.2, anchor=tk.N)
         self.labels.append(self.high_scoreboard)
-
-        self.rules = tk.Label(self)
-        self.rules["text"] = "\n".join((
-                                        "RULES",
-                                        "Simon says press x -> Match the word",
-                                        "Nas says press x ---> Match the colour",
-                                        "Press x -----------> Don't do anything",
-                                        "Don't get it wrong or take too long!",
-                                        "Good luck!"
-                                    ))
-        self.rules.place(relx=0.5, rely=0.3, anchor=tk.N)
-        self.labels.append(self.rules)
 
         # Frames for stacking buttons (ordered bottom-top)
         self.state_frame = tk.Frame(self)
@@ -131,6 +124,7 @@ class MainWindow(tk.Tk):
         self.bl_button = self.AnswerButton(self.ans_bframe, command=lambda:self.answered(2))
         self.br_button = self.AnswerButton(self.ans_bframe, command=lambda:self.answered(3))
 
+        # Loading saved theme if present else default theme
         if self.line_vals[2]:
             self.load_theme(self.line_vals[2])
         else:
@@ -160,6 +154,7 @@ class MainWindow(tk.Tk):
                 line += "\n"
             file.write(line)
 
+    # Sets theme
     def set_theme(self):
 
         self.configure(bg=self.window)
@@ -181,12 +176,14 @@ class MainWindow(tk.Tk):
         for button in [self.tl_button, self.tr_button, self.bl_button, self.br_button]:
             button["activebackground"] = self.active_button
 
+    # Resets theme values to defaults
     def reset_theme(self):
 
         self.window = "white",
         self.button = "white",
         self.text = "black",
         self.active_button = "white"
+        self.active_text = "black"
         self.colour1 = ["green", "GREEN"]
         self.colour2 = ["red", "RED"]
         self.colour3 = ["magenta", "MAGENTA"]
@@ -195,6 +192,7 @@ class MainWindow(tk.Tk):
         self.set_theme()
         self.set_data(2, "")
 
+    # Loads theme from filepath
     def load_theme(self, filepath=""):
         
         if not filepath:
@@ -213,6 +211,21 @@ class MainWindow(tk.Tk):
             self.colour4 = [lines[8].split(",")[0], lines[8].split(",")[1]]
         self.set_theme()
         self.set_data(2, filepath)
+
+    # Displays how to play messagebox
+    def how_to_play(self):
+
+        messagebox.showinfo(
+                            title="How to play",
+                            message="\n".join((
+                                "What Simon says, he knows",
+                                "You should follow as Nas shows",
+                                "Else touch nothing 'til time goes",
+                                "Get it wrong or take too long",
+                                "And your score will soon be gone",
+                                "\nGood luck!"
+                            ))
+                        )
 
     # Displays home screen
     def reset(self):
