@@ -1,7 +1,8 @@
 window=white
 button=white
 text=black
-highlight=white
+active_button=white
+active_text=black
 colour1=green,GREEN
 colour2=red,RED
 colour3=magenta,MAGENTA
