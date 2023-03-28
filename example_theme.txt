@@ -1,0 +1,8 @@
+window=white
+button=white
+text=black
+highlight=white
+colour1=green,GREEN
+colour2=red,RED
+colour3=magenta,MAGENTA
+colour4=blue,BLUE
