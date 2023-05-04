@@ -37,8 +37,25 @@ class MainWindow(tk.Tk):
         self.settings_button.pack(anchor=tk.NE)
         self.buttons.append(self.settings_button)
 
+        self.gamemode = tk.IntVar()
         self.time_limit = tk.IntVar()
+
         self.settings_menu = tk.Menu(self.settings_button, tearoff=0)
+        self.settings_menu.add_radiobutton(
+                                            label="Original",
+                                            variable=self.gamemode,
+                                            value=0
+                                        )
+        self.settings_menu.add_radiobutton(
+                                            label = "Community",
+                                            variable=self.gamemode,
+                                            value=1
+                                        )
+        self.settings_menu.add_command(
+                                        label="Set as default",
+                                        command=lambda:self.set_data(3, self.gamemode.get())
+                                    )
+        self.settings_menu.add_separator()
         self.settings_menu.add_radiobutton(
                                             label="3 seconds",
                                             variable=self.time_limit,
@@ -61,7 +78,7 @@ class MainWindow(tk.Tk):
         self.settings_menu.add_command(
                                     label="Reset theme",
                                     command=self.reset_theme
-                                    )
+                                )
         self.settings_menu.add_separator()
         self.settings_menu.add_command(
                                         label="How to play",
@@ -71,6 +88,7 @@ class MainWindow(tk.Tk):
 
         self.get_data()
         self.time_limit.set(int(self.line_vals[1]))
+        self.gamemode.set(int(self.line_vals[3]))
 
         # Basic labels
         self.command = tk.Label(self)
@@ -215,17 +233,31 @@ class MainWindow(tk.Tk):
     # Displays how to play messagebox
     def how_to_play(self):
 
-        messagebox.showinfo(
-                            title="How to play",
-                            message="\n".join((
-                                "What Simon says, he knows",
-                                "You should follow as Nas shows",
-                                "Else touch nothing 'til time goes",
-                                "Get it wrong or take too long",
-                                "And your score will soon be gone",
-                                "\nGood luck!"
-                            ))
-                        )
+        if self.gamemode.get() == 0:
+            messagebox.showinfo(
+                                title="How to play",
+                                message="\n".join((
+                                    "What Simon says, he knows",
+                                    "You should follow as Nas shows",
+                                    "Else touch nothing 'til time goes",
+                                    "Get it wrong or take too long",
+                                    "And your score will soon be gone",
+                                    "\nGood luck!"
+                                ))
+                            )
+        else:
+            messagebox.showinfo(
+                                title="How to play",
+                                message="\n".join((
+                                    "What Simon says, he knows",
+                                    "You should follow as Nas shows",
+                                    "You can trust that Mati always lies",
+                                    "And none means none for all of time",
+                                    "Get it wrong or take too long",
+                                    "And your score will soon be gone",
+                                    "\nGood luck!"
+                                ))
+                            )
 
     # Displays home screen
     def reset(self):
@@ -294,6 +326,12 @@ class MainWindow(tk.Tk):
 
         # *says starters are 2x weighted
         starters = ["Simon says press ", "Nas says press "]
+
+        original = not bool(self.gamemode.get())
+
+        if not original:
+            starters += ["Mati says press "]
+
         starters += starters
         starters += ["Press "]
 
@@ -324,11 +362,19 @@ class MainWindow(tk.Tk):
 
         # Determining answer
         if starter == starters[0]:
-            self.answer = bcolours.index(colour_dict[colour])
+            self.answer = [bcolours.index(colour_dict[colour])]
         elif starter == starters[1]:
-            self.answer = bcolours.index(tcolour)
+            self.answer = [bcolours.index(tcolour)]
         else:
-            self.answer = 4
+            self.answer = [4]
+
+        if not original:
+            if starter == starters[2]:
+                answers = [0, 1, 2, 3]
+                remove = list(set([bcolours.index(colour_dict[colour]), bcolours.index(tcolour)]))
+                for elem in remove:
+                    answers.remove(elem)
+                self.answer = answers
 
         # Running timers
         self.set_timer(0)
@@ -360,7 +406,7 @@ class MainWindow(tk.Tk):
     # Submits an answer
     def answered(self, n):
 
-        if n == self.answer:
+        if n in self.answer:
             self.score += 1
             self.turn()
         else:
