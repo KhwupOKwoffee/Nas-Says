@@ -20,6 +20,7 @@ class MainWindow(tk.Tk):
     def __init__(self):
 
         self.score = 0
+        # Group variables
         self.labels = []
         self.buttons = []
 
@@ -53,7 +54,7 @@ class MainWindow(tk.Tk):
                                         )
         self.settings_menu.add_command(
                                         label="Set as default",
-                                        command=lambda:self.set_data(3, self.gamemode.get())
+                                        command=lambda:self.set_data("gamemode", self.gamemode.get())
                                     )
         self.settings_menu.add_separator()
         self.settings_menu.add_radiobutton(
@@ -68,7 +69,7 @@ class MainWindow(tk.Tk):
                                         )
         self.settings_menu.add_command(
                                         label="Set as default",
-                                        command=lambda:self.set_data(1, self.time_limit.get())
+                                        command=lambda:self.set_data("time_limit", self.time_limit.get())
                                     )
         self.settings_menu.add_separator()
         self.settings_menu.add_command(
@@ -87,8 +88,8 @@ class MainWindow(tk.Tk):
         self.settings_button["menu"] = self.settings_menu
 
         self.get_data()
-        self.time_limit.set(int(self.line_vals[1]))
-        self.gamemode.set(int(self.line_vals[3]))
+        self.time_limit.set(int(self.data["time_limit"]))
+        self.gamemode.set(int(self.data["gamemode"]))
 
         # Basic labels
         self.command = tk.Label(self)
@@ -143,8 +144,8 @@ class MainWindow(tk.Tk):
         self.br_button = self.AnswerButton(self.ans_bframe, command=lambda:self.answered(3))
 
         # Loading saved theme if present else default theme
-        if self.line_vals[2]:
-            self.load_theme(self.line_vals[2])
+        if self.data["theme"] != "default":
+            self.load_theme(self.data["theme"])
         else:
             self.reset_theme()
 
@@ -154,61 +155,65 @@ class MainWindow(tk.Tk):
     def get_data(self):
 
         with open("data.txt", "r") as file:
-            lines = [line.rstrip("\n") for line in file.readlines()]
-            self.line_labels = [line.split("=")[0] for line in lines]
-            self.line_vals = [line.split("=")[1] for line in lines]
+            lines = file.read().split("\n")
+            self.data = {}
+            for line in lines:
+                if not line:
+                    continue
+                self.data.update({line.split("=")[0]:line.split("=")[1]})
 
     # Sets the value of one line of the data file
-    def set_data(self, n, val):
+    def set_data(self, label, val):
 
         self.get_data()
         with open("data.txt", "w") as file:
-            line = ""
-            for i, line_label in enumerate(self.line_labels):
-                if i == n:
-                    line += line_label + "=" + str(val)
+            for key in self.data.keys():
+                if label == key:
+                    line = key + "=" + str(val)
                 else:
-                    line += line_label + "=" + str(self.line_vals[i])
+                    line = key + "=" + self.data[key]
                 line += "\n"
-            file.write(line)
+                file.write(line)
 
     # Sets theme
     def set_theme(self):
 
-        self.configure(bg=self.window)
+        self.configure(bg=self.theme["window"])
 
-        self.state_frame["bg"] = self.window
-        self.ans_bframe["bg"] = self.window
-        self.ans_tframe["bg"] = self.window
+        self.state_frame["bg"] = self.theme["window"]
+        self.ans_bframe["bg"] = self.theme["window"]
+        self.ans_tframe["bg"] = self.theme["window"]
 
         for label in self.labels:
-            label["bg"] = self.window
-            label["fg"] = self.text   
+            label["bg"] = self.theme["window"]
+            label["fg"] = self.theme["text"]  
         
         for button in self.buttons:
-            button["bg"] = self.button
-            button["fg"] = self.text
-            button["activebackground"] = self.active_button
-            button["activeforeground"] = self.active_text
+            button["bg"] = self.theme["button"]
+            button["fg"] = self.theme["text"]
+            button["activebackground"] = self.theme["active_button"]
+            button["activeforeground"] = self.theme["active_text"]
 
         for button in [self.tl_button, self.tr_button, self.bl_button, self.br_button]:
-            button["activebackground"] = self.active_button
+            button["activebackground"] = self.theme["active_button"]
 
     # Resets theme values to defaults
     def reset_theme(self):
 
-        self.window = "white",
-        self.button = "white",
-        self.text = "black",
-        self.active_button = "white"
-        self.active_text = "black"
-        self.colour1 = ["green", "GREEN"]
-        self.colour2 = ["red", "RED"]
-        self.colour3 = ["magenta", "MAGENTA"]
-        self.colour4 = ["blue", "BLUE"]
+        self.theme = {
+            "window": "white",
+            "button": "white",
+            "text": "black",
+            "active_button": "white",
+            "active_text": "black",
+            "colour1": "green,GREEN",
+            "colour2": "red,RED",
+            "colour3": "magenta,MAGENTA",
+            "colour4": "blue,BLUE"
+        }
         
         self.set_theme()
-        self.set_data(2, "")
+        self.set_data("theme", "default")
 
     # Loads theme from filepath
     def load_theme(self, filepath=""):
@@ -216,19 +221,15 @@ class MainWindow(tk.Tk):
         if not filepath:
             filepath = filedialog.askopenfilename()
         with open(filepath, "r") as file:
-            lines = [line.rstrip("\n") for line in file.readlines()]
-            lines = [line.split("=")[1] for line in lines]
-            self.window = lines[0]
-            self.button = lines[1]
-            self.text = lines[2]
-            self.active_button = lines[3]
-            self.active_text = lines[4]
-            self.colour1 = [lines[5].split(",")[0], lines[5].split(",")[1]]
-            self.colour2 = [lines[6].split(",")[0], lines[6].split(",")[1]]
-            self.colour3 = [lines[7].split(",")[0], lines[7].split(",")[1]]
-            self.colour4 = [lines[8].split(",")[0], lines[8].split(",")[1]]
+            lines = file.read().split("\n")
+            self.theme = {}
+            for line in lines:
+                if not line:
+                    continue
+                self.theme.update({line.split("=")[0]:line.split("=")[1]})
+
         self.set_theme()
-        self.set_data(2, filepath)
+        self.set_data("theme", filepath)
 
     # Displays how to play messagebox
     def how_to_play(self):
@@ -264,7 +265,7 @@ class MainWindow(tk.Tk):
 
         # Resetting basic labels
         self.command["text"] = "Welcome to Nas Says"
-        self.command["fg"] = self.text
+        self.command["fg"] = self.theme["text"]
 
         self.time_label["text"] = "Press Start to begin"
 
@@ -272,7 +273,7 @@ class MainWindow(tk.Tk):
 
         # Getting and setting high score
         self.get_data()
-        high_score = max(int(self.line_vals[0]), self.score)
+        high_score = max(int(self.data["high_score"]), self.score)
         self.set_data(0, high_score)
         self.high_scoreboard["text"] = f"High Score: {high_score}"
 
@@ -324,7 +325,7 @@ class MainWindow(tk.Tk):
 
         self.set_time_limit()
 
-        # *says starters are 2x weighted
+        # *says starters are weighted heavier
         starters = ["Simon says press ", "Nas says press "]
 
         original = not bool(self.gamemode.get())
@@ -336,10 +337,10 @@ class MainWindow(tk.Tk):
         starters += ["Press "]
 
         colour_dict = {
-            self.colour1[1]: self.colour1[0],
-            self.colour2[1]: self.colour2[0],
-            self.colour3[1]: self.colour3[0],
-            self.colour4[1]: self.colour4[0]
+            self.theme["colour1"].split(",")[1]: self.theme["colour1"].split(",")[0],
+            self.theme["colour2"].split(",")[1]: self.theme["colour2"].split(",")[0],
+            self.theme["colour3"].split(",")[1]: self.theme["colour3"].split(",")[0],
+            self.theme["colour4"].split(",")[1]: self.theme["colour4"].split(",")[0]
         }
 
         # Choosing and applying a random starter, colour, and text colour
