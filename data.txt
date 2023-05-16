@@ -1,4 +1,4 @@
-high_score=12
+high_score=0
 time_limit=3
-theme=
+theme=default
 gamemode=0
